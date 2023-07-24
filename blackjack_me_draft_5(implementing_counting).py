@@ -129,7 +129,7 @@ def soft_hand_check(pre_converted_players_hand):
 # "SUR" : Surrender
 
 DAS_boolean = True # make this into input later
-def basic_strategy(players_hand, dealers_hand): # implement to turn off LS here
+def basic_strategy(players_hand, dealers_hand, true_count): # implement to turn off LS here
     dealer_upcard = dealers_hand[0]
     # implement some house rules for doubling down here
     if len(players_hand) == 2:
@@ -190,6 +190,12 @@ def basic_strategy(players_hand, dealers_hand): # implement to turn off LS here
     if ace_converter(players_hand)["hand_total"] == 20 and soft_hand_check(players_hand):
         return "S"
     if ace_converter(players_hand)["hand_total"] == 19 and soft_hand_check(players_hand):
+        if dealer_upcard == 4 and DAS_boolean and true_count >= 3: # deviation
+            return "D"
+        if dealer_upcard == 5 and DAS_boolean and true_count >= 1: # deviation
+            return "D"
+        if dealer_upcard == 6 and true_count > 0: # deviation
+            return "S"
         if dealer_upcard == 6 and DAS_boolean:
             return "D"
         else:
@@ -205,6 +211,8 @@ def basic_strategy(players_hand, dealers_hand): # implement to turn off LS here
             return "H"
     if ace_converter(players_hand)["hand_total"] == 17 and soft_hand_check(players_hand):
         if dealer_upcard in [3, 4, 5, 6] and DAS_boolean:
+            return "D"
+        if dealer_upcard == 2 and DAS_boolean and true_count >= 1: # deviation
             return "D"
         else:
             return "H"
@@ -231,6 +239,12 @@ def basic_strategy(players_hand, dealers_hand): # implement to turn off LS here
     if ace_converter(players_hand)["hand_total"] >= 17 and not soft_hand_check(players_hand):
         return "S"
     if ace_converter(players_hand)["hand_total"] == 16 and not soft_hand_check(players_hand):
+        if dealer_upcard == 9 and true_count >= 4: # deviation
+            return "S"
+        if dealer_upcard == 10 and true_count > 0: # deviation
+            return "S"
+        if dealer_upcard == "A" and true_count >= 3: # deviation
+            return "S"
         if dealer_upcard in [2, 3, 4, 5, 6]:
             return "S"
         if dealer_upcard in [9, 10, "A"] and len(players_hand) == 2:
@@ -238,6 +252,10 @@ def basic_strategy(players_hand, dealers_hand): # implement to turn off LS here
         else:
             return "H"
     if ace_converter(players_hand)["hand_total"] == 15 and not soft_hand_check(players_hand):
+        if dealer_upcard == 10 and true_count >= 4: # deviation
+            return "S"
+        if dealer_upcard == "A" and true_count >= 5: # deviation
+            return "S"
         if dealer_upcard in [2, 3, 4, 5, 6]:
             return "S"
         if dealer_upcard in [10] and len(players_hand) == 2:
@@ -250,11 +268,19 @@ def basic_strategy(players_hand, dealers_hand): # implement to turn off LS here
         else:
             return "H"
     if ace_converter(players_hand)["hand_total"] == 13 and not soft_hand_check(players_hand):
+        if dealer_upcard == 2 and true_count <= -1:
+            return "H"
         if dealer_upcard in [2, 3, 4, 5, 6]:
             return "S"
         else:
             return "H"
     if ace_converter(players_hand)["hand_total"] == 12 and not soft_hand_check(players_hand):
+        if dealer_upcard == 2 and true_count >= 3:
+            return "S"
+        if dealer_upcard == 3 and true_count >= 2:
+            return "S"
+        if dealer_upcard == 4 and true_count < 0:
+            return "H"
         if dealer_upcard in [4, 5, 6]:
             return "S"
         else:
@@ -265,18 +291,28 @@ def basic_strategy(players_hand, dealers_hand): # implement to turn off LS here
         else:
             return "H"
     if ace_converter(players_hand)["hand_total"] == 10 and not soft_hand_check(players_hand):
+        if dealer_upcard == 10 and true_count >= 4 and DAS_boolean:
+            return "D"
+        if dealer_upcard == "A" and true_count >= 3 and DAS_boolean:
+            return "D"
         if dealer_upcard in [2, 3, 4, 5, 6, 7, 8, 9] and DAS_boolean:
             return "D"
         else:
             return "H"
     if ace_converter(players_hand)["hand_total"] == 9 and not soft_hand_check(players_hand):
+        if dealer_upcard == 2 and true_count >= 1 and DAS_boolean:
+            return "D"
+        if dealer_upcard == 7 and true_count >= 3 and DAS_boolean:
+            return "D"
         if dealer_upcard in [3, 4, 5, 6] and DAS_boolean:
             return "D"
         else:
             return "H"
     if ace_converter(players_hand)["hand_total"] <= 8 and not soft_hand_check(players_hand):
-        return "H"
-
+        if dealer_upcard == 6 and true_count >= 2 and DAS_boolean:
+            return "D"
+        else:
+            return "H"
 
 
 
@@ -355,13 +391,13 @@ def play_player(shoe, count, deck_count):
             dealer_blackjack_boolean = True
             #print("dealer has blackjack")
             break
-        if basic_strategy(players_hand, dealers_hand) == "SUR":
+        if basic_strategy(players_hand, dealers_hand, true_count) == "SUR":
             late_surrender_boolean = True
             break
-        if basic_strategy(players_hand, dealers_hand) == "Y":
+        if basic_strategy(players_hand, dealers_hand, true_count) == "Y":
             split_boolean = True
             break
-        if basic_strategy(players_hand, dealers_hand) == "H":
+        if basic_strategy(players_hand, dealers_hand, true_count) == "H":
             #print("You hit with (" + str(print_hand(players_hand)) + "), a " + str(ace_converter(players_hand)["hand_total"]) + ", against a " + str(dealers_hand[0]))
             card = shoe.pop(0)
             players_hand.append(card)
@@ -370,10 +406,10 @@ def play_player(shoe, count, deck_count):
             true_count = count / decks_remaining
             #print("players_hand: " + str(print_hand(players_hand)))
             continue # should restart while loop and check while loop condition
-        if basic_strategy(players_hand, dealers_hand) == "S":
+        if basic_strategy(players_hand, dealers_hand, true_count) == "S":
             #print("You stand with (" + str(print_hand(players_hand)) + "), a " + str(ace_converter(players_hand)["hand_total"]) + ", against a " + str(dealers_hand[0]))
             break
-        if basic_strategy(players_hand, dealers_hand) == "D":
+        if basic_strategy(players_hand, dealers_hand, true_count) == "D":
             #print("You double with (" + str(print_hand(players_hand)) + "), a " + str(ace_converter(players_hand)["hand_total"]) + ", against a " + str(dealers_hand[0]))
             double_boolean = True
             card = shoe.pop(0)
@@ -451,7 +487,7 @@ def split(players_hand, dealers_hand, shoe, count):
         i += 1
     i = 0
     for players_hand in split_players_hand: # second split, one more
-        if basic_strategy(players_hand, dealers_hand) == "Y":
+        if basic_strategy(players_hand, dealers_hand, true_count) == "Y":
             num_splits += 1
             #print("You are in the second split")
             split_players_hand_2 = [[split_players_hand[i][0]], [split_players_hand[i][1]]]
@@ -476,7 +512,7 @@ def split(players_hand, dealers_hand, shoe, count):
     i = 0
     for players_hand in split_players_hand: # third split, no more splits
         # I think this third split splicing for the lists is wrong
-        if basic_strategy(split_players_hand[i], dealers_hand) == "Y":
+        if basic_strategy(split_players_hand[i], dealers_hand, true_count) == "Y":
             num_splits += 1
             #print("You are in the third split")
             split_players_hand_3 = [[split_players_hand[i][0]], [split_players_hand[i][1]]]
@@ -508,7 +544,7 @@ def split(players_hand, dealers_hand, shoe, count):
     for players_hand in split_players_hand:
         while ace_converter(players_hand)["hand_total"] <= 21: # player
             #print("You have (" + str(print_hand(players_hand)) + "), a " + str(ace_converter(players_hand)["hand_total"]) + ", against a " + str(dealers_hand[0]))
-            result = basic_strategy(players_hand, dealers_hand)
+            result = basic_strategy(players_hand, dealers_hand, true_count)
             if num_splits >= 3:
                 if players_hand == [9, 9]:
                     result = "S"
@@ -693,64 +729,86 @@ hands_surrendered = 0
 split_hands_played = 0
 
 bankroll_list = []
-for i in range(0, rounds):
-    penetration = 85 # as a percentage, adjust here
-    deck_count = 6 # adjust accordingly
-    if (len(cards * 4 * deck_count) - len(shoe)) >= ((penetration / 100) * len(cards * 4 * deck_count)): # penetration
-        count = 0
-        true_count = 0
-        cards = ["A", 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10]
-        shoe = cards * 4 * deck_count
-        random.shuffle(shoe)
-        #print("DECK RESHUFFLED")
-    #print("len(shoe): " + str(len(shoe)))
-    player_dict = play_player(shoe, count, deck_count)
-    #print("len(shoe): " + str(len(shoe)))
-    dealer_dict = play_dealer(player_dict["dealers_hand"], player_dict["player_bust"], player_dict["late_surrender_boolean"], player_dict["player_blackjack_boolean"], player_dict["shoe"])
-    #print("len(shoe): " + str(len(shoe)))
-    #print("split_boolean: " + str(player_dict["split_boolean"]))
-    if player_dict["split_boolean"] == True:
-        #print("You are in the player_dict[split_boolean] check")
-        split_dict = split(player_dict["players_hand"], player_dict["dealers_hand"], dealer_dict["shoe"], count)
+sims_list = []
+for sims in range(0, 500):
+    sims_list.append(bankroll)
+    deck_count = 6
+    count = 0
+    true_count = 0
+    cards = ["A", 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10] # need to do penetration
+    shoe = cards * 4 * deck_count
+    random.shuffle(shoe)
+    rounds = 210000
+    rounds_per_hour = 70
+    hands_played = 0
+    hands_won = 0
+    hands_lost = 0
+    hands_pushed = 0
+    hands_surrendered = 0
+    split_hands_played = 0
+    starting_bankroll = 15000
+    bankroll = starting_bankroll
+    print("sims done: " + str(sims))
+    for i in range(0, rounds):
+        penetration = 85 # as a percentage, adjust here
+        deck_count = 6 # adjust accordingly
+        if (len(cards * 4 * deck_count) - len(shoe)) >= ((penetration / 100) * len(cards * 4 * deck_count)): # penetration
+            count = 0
+            true_count = 0
+            cards = ["A", 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10]
+            shoe = cards * 4 * deck_count
+            random.shuffle(shoe)
+            #print("DECK RESHUFFLED")
         #print("len(shoe): " + str(len(shoe)))
-        for j in range(0, len(split_dict)):
-            bankroll_dict = play_decision(split_dict[j]["players_hand"], dealer_dict["dealers_hand"], player_dict["player_blackjack_boolean"], player_dict["dealer_blackjack_boolean"], dealer_dict["dealer_bust"], bet_spread, bankroll, split_dict[j]["double_boolean"], split_dict[j]["player_bust"], player_dict["late_surrender_boolean"], true_count, count, hands_won, hands_lost, hands_pushed, hands_surrendered, hands_played)
-            bankroll = bankroll_dict["bankroll"]
-            bankroll_list.append(bankroll)
-            hands_won = bankroll_dict["hands_won"]
-            hands_lost = bankroll_dict["hands_lost"]
-            hands_pushed = bankroll_dict["hands_pushed"]
-            hands_surrendered = bankroll_dict["hands_surrendered"]
-            hands_played = bankroll_dict["hands_played"]
-            split_hands_played += 1
-        for j in range(0, len(split_dict)):
-            #print(split_dict[j]["players_hand"])
-            count += count_update(split_dict[j]["players_hand"])
-            decks_remaining = deck_count * (len(shoe) / (deck_count * 52))
-            true_count = count / decks_remaining
-            #print("running_count in SIM: " + str(count))
-            #print("split_dict running_count: " + str(split_dict[j]["count"]))
-            #print("split_dict decks_remaining: " + str(split_dict[j]["decks_remaining"]))
-            #print("split_dict true_count: " + str(split_dict[j]["true_count"]))
-        continue # this fixes the problem where the pair doesn't get get forgotten
-    bankroll_dict = play_decision(player_dict["players_hand"], dealer_dict["dealers_hand"], player_dict["player_blackjack_boolean"], player_dict["dealer_blackjack_boolean"], dealer_dict["dealer_bust"], bet_spread, bankroll, player_dict["double_boolean"], player_dict["player_bust"], player_dict["late_surrender_boolean"], true_count, count, hands_won, hands_lost, hands_pushed, hands_surrendered, hands_played)
-    bankroll = bankroll_dict["bankroll"]
-    bankroll_list.append(bankroll)
-    hands_won = bankroll_dict["hands_won"]
-    hands_lost = bankroll_dict["hands_lost"]
-    hands_pushed = bankroll_dict["hands_pushed"]
-    hands_surrendered = bankroll_dict["hands_surrendered"]
-    hands_played = bankroll_dict["hands_played"]
-    count += count_update(player_dict["players_hand"])
-    count += count_update(dealer_dict["dealers_hand"])
-    decks_remaining = deck_count * (len(shoe) / (deck_count * 52))
-    true_count = count / decks_remaining
-    #print()
-    #print("running count in SIM: " + str(count))
-    #print("player_dict running_count: " + str(player_dict["count"]))
-    #print("player_dict decks_remaining: " + str(player_dict["decks_remaining"]))
-    #print("player_dict true_count: " + str(player_dict["true_count"]))
-    #print("bankroll: " + str(bankroll))
+        player_dict = play_player(shoe, count, deck_count)
+        #print("len(shoe): " + str(len(shoe)))
+        dealer_dict = play_dealer(player_dict["dealers_hand"], player_dict["player_bust"], player_dict["late_surrender_boolean"], player_dict["player_blackjack_boolean"], player_dict["shoe"])
+        #print("len(shoe): " + str(len(shoe)))
+        #print("split_boolean: " + str(player_dict["split_boolean"]))
+        if player_dict["split_boolean"] == True:
+            #print("You are in the player_dict[split_boolean] check")
+            split_dict = split(player_dict["players_hand"], player_dict["dealers_hand"], dealer_dict["shoe"], count)
+            #print("len(shoe): " + str(len(shoe)))
+            for j in range(0, len(split_dict)):
+                bankroll_dict = play_decision(split_dict[j]["players_hand"], dealer_dict["dealers_hand"], player_dict["player_blackjack_boolean"], player_dict["dealer_blackjack_boolean"], dealer_dict["dealer_bust"], bet_spread, bankroll, split_dict[j]["double_boolean"], split_dict[j]["player_bust"], player_dict["late_surrender_boolean"], true_count, count, hands_won, hands_lost, hands_pushed, hands_surrendered, hands_played)
+                bankroll = bankroll_dict["bankroll"]
+                bankroll_list.append(bankroll)
+                hands_won = bankroll_dict["hands_won"]
+                hands_lost = bankroll_dict["hands_lost"]
+                hands_pushed = bankroll_dict["hands_pushed"]
+                hands_surrendered = bankroll_dict["hands_surrendered"]
+                hands_played = bankroll_dict["hands_played"]
+                split_hands_played += 1
+            for j in range(0, len(split_dict)):
+                #print(split_dict[j]["players_hand"])
+                count += count_update(split_dict[j]["players_hand"])
+                decks_remaining = deck_count * (len(shoe) / (deck_count * 52))
+                true_count = count / decks_remaining
+                #print("running_count in SIM: " + str(count))
+                #print("split_dict running_count: " + str(split_dict[j]["count"]))
+                #print("split_dict decks_remaining: " + str(split_dict[j]["decks_remaining"]))
+                #print("split_dict true_count: " + str(split_dict[j]["true_count"]))
+            continue # this fixes the problem where the pair doesn't get get forgotten
+        bankroll_dict = play_decision(player_dict["players_hand"], dealer_dict["dealers_hand"], player_dict["player_blackjack_boolean"], player_dict["dealer_blackjack_boolean"], dealer_dict["dealer_bust"], bet_spread, bankroll, player_dict["double_boolean"], player_dict["player_bust"], player_dict["late_surrender_boolean"], true_count, count, hands_won, hands_lost, hands_pushed, hands_surrendered, hands_played)
+        bankroll = bankroll_dict["bankroll"]
+        bankroll_list.append(bankroll)
+        hands_won = bankroll_dict["hands_won"]
+        hands_lost = bankroll_dict["hands_lost"]
+        hands_pushed = bankroll_dict["hands_pushed"]
+        hands_surrendered = bankroll_dict["hands_surrendered"]
+        hands_played = bankroll_dict["hands_played"]
+        count += count_update(player_dict["players_hand"])
+        count += count_update(dealer_dict["dealers_hand"])
+        decks_remaining = deck_count * (len(shoe) / (deck_count * 52))
+        true_count = count / decks_remaining
+        if bankroll < 0: # you went broke
+            break
+        #print()
+        #print("running count in SIM: " + str(count))
+        #print("player_dict running_count: " + str(player_dict["count"]))
+        #print("player_dict decks_remaining: " + str(player_dict["decks_remaining"]))
+        #print("player_dict true_count: " + str(player_dict["true_count"]))
+        #print("bankroll: " + str(bankroll))
 
 
 money_made = (bankroll - starting_bankroll)
@@ -768,6 +826,13 @@ print("You surrendered %" + str(hands_surrendered / rounds) + " of the time.")
 #print("split_hands_played: " + str(split_hands_played))
 print("Total hands played by addition of parts: " + str(hands_won + hands_lost + hands_pushed + hands_surrendered))
 print("Total hands played from play_decision counter: " + str(hands_played))
+print(sims_list[1:])
+
+i = 0
+for values in sims_list:
+    if values <= 0:
+        i += 1
+print("You went broke " + str(i / len(sims_list)) + " times.")
 
 
 
