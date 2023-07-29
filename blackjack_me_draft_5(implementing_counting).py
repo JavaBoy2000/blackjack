@@ -1,10 +1,12 @@
 import random
 import matplotlib.pyplot as plt
+import numpy as np
 import time
 import math
 
 start_time = time.time()
 
+'''
 def generate_shoe(deck_count): # for later if you need it
     cards = ["A", 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10]
     shoe = cards * 4 * deck_count
@@ -14,6 +16,7 @@ def generate_shoe(deck_count): # for later if you need it
 def generate_player_hand(shoe):
     players_hand = [shoe.pop(0), shoe.pop(0)]
     return players_hand
+'''
 
 def print_hand(hand):
     str_hand = ""
@@ -694,51 +697,51 @@ def play_decision(players_hand, dealers_hand, player_blackjack_boolean, dealer_b
         return {"bankroll" : bankroll, "hands_won" : hands_won, "hands_lost" : hands_lost, "hands_pushed" : hands_pushed, "hands_surrendered" : hands_surrendered, "hands_played" : hands_played}
     return {"bankroll" : bankroll, "hands_won" : hands_won, "hands_lost" : hands_lost, "hands_pushed" : hands_pushed, "hands_surrendered" : hands_surrendered, "hands_played" : hands_played}
 
-starting_bankroll = 15000
-bankroll = starting_bankroll
-bet_spread = {  -30 : 25, -29 : 25, -28 : 25, -27 : 25, -26 : 25 ,
-                -25 : 25, -24 : 25, -23 : 25, -22 : 25, -21 : 25 ,
-                -20 : 25, -19 : 25, -18 : 25, -17 : 25, -16 : 25 ,
-                -15 : 25, -14 : 25, -13 : 25, -12 : 25, -11 : 25 ,
-                -10 : 25,  -9 : 25,   -8 : 25,  -7 : 25, -6 : 25 ,
-                -5 : 25,   -4 : 25,   -3 : 25,  -2 : 25, -1 : 25,
-                0 : 25,   1 : 25,   2 : 100 ,
-                3 : 200,  4 : 500,  5 : 500 ,
-                6 : 500,  7 : 500,  8 : 500 ,
-                9 : 500,  10 : 500, 11 : 500 ,
-                12 : 500, 13 : 500, 14 : 500 ,
-                15 : 500, 16 : 500, 17 : 500 ,
-                18 : 500, 19 : 500, 20 : 500 ,
-                21 : 500, 22 : 500, 23 : 500 ,
-                24 : 500, 25 : 500, 26 : 500 ,
-                27 : 500, 28 : 500, 29 : 500
-            }
-deck_count = 6
-count = 0
-true_count = 0
-cards = ["A", 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10] # need to do penetration
-shoe = cards * 4 * deck_count
-random.shuffle(shoe)
-rounds = 210000
-rounds_per_hour = 70
-hands_played = 0
-hands_won = 0
-hands_lost = 0
-hands_pushed = 0
-hands_surrendered = 0
-split_hands_played = 0
+'''
+hl, = plt.plot([], [])
 
+def update_line(hl, new_data):
+    hl.set_xdata(numpy.append(hl.get_xdata(), new_data))
+    hl.set_ydata(numpy.append(hl.get_ydata(), new_data))
+    plt.draw()
+'''
+
+bet_spread = {  -45 : 10, -44 : 10, -43 : 10, -42 : 10, -41 : 10 ,
+                -40 : 10, -39 : 10, -38 : 10, -37 : 10, -36 : 10 ,
+                -35 : 10, -34 : 10, -33 : 10, -32 : 10, -31 : 10 ,
+                -30 : 10, -29 : 10, -28 : 10, -27 : 10, -26 : 10 ,
+                -25 : 10, -24 : 10, -23 : 10, -22 : 10, -21 : 10 ,
+                -20 : 10, -19 : 10, -18 : 10, -17 : 10, -16 : 10 ,
+                -15 : 10, -14 : 10, -13 : 10, -12 : 10, -11 : 10 ,
+                -10 : 10,  -9 : 10,   -8 : 10,  -7 : 10, -6 : 10 ,
+                -5 : 10,   -4 : 10,   -3 : 10,  -2 : 10, -1 : 10,
+                0 : 10,   1 : 10,   2 : 25 ,
+                3 : 50,  4 : 100,  5 : 100 ,
+                6 : 100,  7 : 100,  8 : 100 ,
+                9 : 100,  10 : 100, 11 : 100 ,
+                12 : 100, 13 : 100, 14 : 100 ,
+                15 : 100, 16 : 100, 17 : 100 ,
+                18 : 100, 19 : 100, 20 : 100 ,
+                21 : 100, 22 : 100, 23 : 100 ,
+                24 : 100, 25 : 100, 26 : 100 ,
+                27 : 100, 28 : 100, 29 : 100 ,
+                30 : 100, 31 : 100, 32 : 100 ,
+                33 : 100, 34 : 100, 35 : 100 ,
+                36 : 100, 37 : 100, 38 : 100 ,
+                39 : 100, 40 : 100, 41 : 100
+            }
 bankroll_list = []
 sims_list = []
-for sims in range(0, 500):
-    sims_list.append(bankroll)
-    deck_count = 6
+sims_amt = 10
+for sims in range(0, sims_amt):
+    deck_count = 2
+    penetration = 70 # as a percentage, adjust here
     count = 0
     true_count = 0
     cards = ["A", 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10] # need to do penetration
     shoe = cards * 4 * deck_count
     random.shuffle(shoe)
-    rounds = 210000
+    rounds = 250000
     rounds_per_hour = 70
     hands_played = 0
     hands_won = 0
@@ -746,12 +749,11 @@ for sims in range(0, 500):
     hands_pushed = 0
     hands_surrendered = 0
     split_hands_played = 0
-    starting_bankroll = 15000
+    starting_bankroll = 10000
     bankroll = starting_bankroll
+    counter = 0
     print("sims done: " + str(sims))
     for i in range(0, rounds):
-        penetration = 85 # as a percentage, adjust here
-        deck_count = 6 # adjust accordingly
         if (len(cards * 4 * deck_count) - len(shoe)) >= ((penetration / 100) * len(cards * 4 * deck_count)): # penetration
             count = 0
             true_count = 0
@@ -779,6 +781,7 @@ for sims in range(0, 500):
                 hands_surrendered = bankroll_dict["hands_surrendered"]
                 hands_played = bankroll_dict["hands_played"]
                 split_hands_played += 1
+                #update_line(hl, bankroll_list)
             for j in range(0, len(split_dict)):
                 #print(split_dict[j]["players_hand"])
                 count += count_update(split_dict[j]["players_hand"])
@@ -792,6 +795,7 @@ for sims in range(0, 500):
         bankroll_dict = play_decision(player_dict["players_hand"], dealer_dict["dealers_hand"], player_dict["player_blackjack_boolean"], player_dict["dealer_blackjack_boolean"], dealer_dict["dealer_bust"], bet_spread, bankroll, player_dict["double_boolean"], player_dict["player_bust"], player_dict["late_surrender_boolean"], true_count, count, hands_won, hands_lost, hands_pushed, hands_surrendered, hands_played)
         bankroll = bankroll_dict["bankroll"]
         bankroll_list.append(bankroll)
+        #update_line(hl, bankroll_list)
         hands_won = bankroll_dict["hands_won"]
         hands_lost = bankroll_dict["hands_lost"]
         hands_pushed = bankroll_dict["hands_pushed"]
@@ -802,7 +806,10 @@ for sims in range(0, 500):
         decks_remaining = deck_count * (len(shoe) / (deck_count * 52))
         true_count = count / decks_remaining
         if bankroll < 0: # you went broke
+            sims_list.append(bankroll)
             break
+        if i == (rounds - 1):
+            sims_list.append(bankroll - starting_bankroll)
         #print()
         #print("running count in SIM: " + str(count))
         #print("player_dict running_count: " + str(player_dict["count"]))
@@ -814,7 +821,7 @@ for sims in range(0, 500):
 money_made = (bankroll - starting_bankroll)
 print("money_made: $" + str(money_made) + " in " + str(rounds / rounds_per_hour) + "hrs")
 ev = money_made / (rounds / rounds_per_hour)
-print("ev ($/hr) : $" + str(ev))
+print("ev ($/hr): $" + str(ev))
 #print("hands_won: " + str(hands_won))
 #print("hands_lost: " + str(hands_lost))
 #print("hands_pushed: " + str(hands_pushed))
@@ -826,21 +833,36 @@ print("You surrendered %" + str(hands_surrendered / rounds) + " of the time.")
 #print("split_hands_played: " + str(split_hands_played))
 print("Total hands played by addition of parts: " + str(hands_won + hands_lost + hands_pushed + hands_surrendered))
 print("Total hands played from play_decision counter: " + str(hands_played))
-print(sims_list[1:])
+print(sims_list)
 
 i = 0
 for values in sims_list:
     if values <= 0:
         i += 1
-print("You went broke " + str(i / len(sims_list)) + " times.")
-
-
+print("You went broke " + str(i) + " times.")
+print("Your risk of ruin based on " + str(sims_amt) + " sims is " + str(i / len(sims_list)))
+print("Average of all bankrolls: $" + str(sum(sims_list) / len(sims_list)))
+print("ev ($/hr): $" + str((sum(sims_list) / len(sims_list)) / (rounds / rounds_per_hour)))
+print("i: " + str(i))
 
 end_time = time.time()
 print("time: " + str(round(end_time - start_time, 5)) + "s")
 #y=[2,4,6,1]
+
 plt.plot(bankroll_list)
 plt.xlabel('X-axis')
-#plt.ylabel('Y-axis')
+plt.ylabel('Y-axis')
 plt.title("bankroll")
 plt.show()
+
+
+'''
+plt.axis([0, 1000, -1000, 200000])
+
+for i in range(1000):
+    y = bankroll_list[i]
+    plt.scatter(i, y)
+    plt.pause(0.00000001)
+
+plt.show()
+'''
