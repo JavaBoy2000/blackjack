@@ -311,11 +311,13 @@ def basic_strategy(players_hand, dealers_hand, true_count): # implement to turn 
             return "D"
         else:
             return "H"
-    if ace_converter(players_hand)["hand_total"] <= 8 and not soft_hand_check(players_hand):
+    if ace_converter(players_hand)["hand_total"] == 8 and not soft_hand_check(players_hand):
         if dealer_upcard == 6 and true_count >= 2 and DAS_boolean:
             return "D"
         else:
             return "H"
+    if ace_converter(players_hand)["hand_total"] < 8 and not soft_hand_check(players_hand):
+        return "H"
 
 
 
@@ -382,6 +384,7 @@ def play_player(shoe, count, deck_count):
     dealer_blackjack_boolean = False
     double_boolean = False
     split_boolean = False
+    ace_split_boolean = False
     #if dealer_upcard == "A":
         #print("Dealer: Would you like insurance")
         #print("Player: No, unless the true count is +3 or higher")
@@ -437,7 +440,8 @@ def play_player(shoe, count, deck_count):
                 "shoe" : shoe ,
                 "count" : count ,
                 "decks_remaining" : round(decks_remaining, 5) ,
-                "true_count" : round(true_count, 5)
+                "true_count" : round(true_count, 5) ,
+                "ace_split_boolean" : ace_split_boolean
             }
 
 def split(players_hand, dealers_hand, shoe, count):
@@ -446,6 +450,7 @@ def split(players_hand, dealers_hand, shoe, count):
     dict_a = {}
     double_boolean = False
     player_bust = False
+    ace_split_boolean = False
     count += count_update(dealers_hand)
     decks_remaining = deck_count * (len(shoe) / (deck_count * 52))
     true_count = count / decks_remaining
@@ -456,13 +461,14 @@ def split(players_hand, dealers_hand, shoe, count):
         #print(split_players_hand)
         i = 0
         # fix it to where a "natural" doesn't get paid 3:2
-        # use boolean that gets returned and then used in play_decision
+        # use boolean that gets returned and then used in play_decision, nice
         for players_hand in split_players_hand:
             card = shoe.pop(0)
             split_players_hand[i].append(card)
             count += count_update([card])
             decks_remaining = deck_count * (len(shoe) / (deck_count * 52))
             true_count = count / decks_remaining
+            ace_split_boolean = True
             dict_a[i] = {
                             "players_hand" : split_players_hand[i] ,
                             "dealers_hand" : dealers_hand ,
@@ -471,7 +477,8 @@ def split(players_hand, dealers_hand, shoe, count):
                             "shoe" : shoe ,
                             "count" : count ,
                             "decks_remaining" : round(decks_remaining, 5) ,
-                            "true_count" : round(true_count, 5)
+                            "true_count" : round(true_count, 5) ,
+                            "ace_split_boolean" : ace_split_boolean
                         }
             i += 1
         return dict_a
@@ -557,11 +564,22 @@ def split(players_hand, dealers_hand, shoe, count):
                     else:
                         result = "H"
                 if players_hand == [6, 6]:
-                    if dealers_hand[0] in [4, 5, 6]: # need deviations here
+                    if dealers_hand[0] == 2 and true_count >= 3:
+                        result = "S"
+                    if dealers_hand[0] == 3 and true_count >= 2:
+                        result = "S"
+                    if dealers_hand[0] == 4 and true_count < 0:
+                        result = "H"
+                    if dealers_hand[0] in [4, 5, 6]:
                         result = "S"
                     else:
                         result = "H"
-                if players_hand == [4, 4] or players_hand == [3, 3] or players_hand == [2, 2]:
+                if players_hand == [4, 4]:
+                    if dealers_hand == 6 and true_count >= 2:
+                        result = "D"
+                    else:
+                        result = "H"
+                if players_hand == [3, 3] or players_hand == [2, 2]:
                     result = "H"
             if result == "SUR":
                 #print("You can't late surrender after you've split, your only choice is to hit")
@@ -605,7 +623,8 @@ def split(players_hand, dealers_hand, shoe, count):
                         "shoe" : shoe ,
                         "count" : count ,
                         "decks_remaining" : round(decks_remaining, 5) ,
-                        "true_count" : round(true_count, 5)
+                        "true_count" : round(true_count, 5) ,
+                        "ace_split_boolean" : ace_split_boolean
                     }
         #split_players_hand[i] = players_hand
         i += 1
@@ -613,7 +632,7 @@ def split(players_hand, dealers_hand, shoe, count):
 
 
 
-def play_decision(players_hand, dealers_hand, player_blackjack_boolean, dealer_blackjack_boolean, dealer_bust, bet_spread, bankroll, double_boolean, player_bust, late_surrender_boolean, true_count, running_count, hands_won, hands_lost, hands_pushed, hands_surrendered, hands_played):
+def play_decision(players_hand, dealers_hand, player_blackjack_boolean, dealer_blackjack_boolean, dealer_bust, bet_spread, bankroll, double_boolean, player_bust, late_surrender_boolean, true_count, running_count, hands_won, hands_lost, hands_pushed, hands_surrendered, hands_played, ace_split_boolean):
     #print("play_decision")
     #print("running_count given to play_decision: " + str(running_count))
     #print("Player has (" + str(print_hand(players_hand)) + "), a " + str(ace_converter(players_hand)["hand_total"]))
@@ -626,66 +645,82 @@ def play_decision(players_hand, dealers_hand, player_blackjack_boolean, dealer_b
     elif true_count >= 0:
         bet = bet_spread[math.floor(true_count)]
         #print("true_count floored: " + str(math.floor(true_count)))
+    if ace_split_boolean:
+        player_blackjack_boolean = False
+        #print("Hello")
+        #print(players_hand)
     if player_bust:
         #print("Player has busted (Player loses $" + str(bet) + ")")
         bankroll -= bet
         hands_lost += 1
+        #print("bankroll: " + str(bankroll))
         #print()
         return {"bankroll" : bankroll, "hands_won" : hands_won, "hands_lost" : hands_lost, "hands_pushed" : hands_pushed, "hands_surrendered" : hands_surrendered, "hands_played" : hands_played}
     if late_surrender_boolean and dealer_blackjack_boolean:
         #print("Player chose to late surrender and Dealer has blackjack (Player loses $" + str(bet) + ")")
         bankroll -= bet
         hands_surrendered += 1
+        #print("bankroll: " + str(bankroll))
         #print()
         return {"bankroll" : bankroll, "hands_won" : hands_won, "hands_lost" : hands_lost, "hands_pushed" : hands_pushed, "hands_surrendered" : hands_surrendered, "hands_played" : hands_played}
     if late_surrender_boolean and not dealer_blackjack_boolean:
         #print("Player chose to late surrender and Dealer does not have blackjack (Player loses $" + str(0.5 * bet) + ")")
         bankroll -= (0.5 * bet)
         hands_surrendered += 1
+        #print("bankroll: " + str(bankroll))
         #print()
         return {"bankroll" : bankroll, "hands_won" : hands_won, "hands_lost" : hands_lost, "hands_pushed" : hands_pushed, "hands_surrendered" : hands_surrendered, "hands_played" : hands_played}
     if player_blackjack_boolean and dealer_blackjack_boolean: # both have blackjack
         #print("Player and Dealer have blackjack (Push)")
         hands_pushed += 1
+        #print("bankroll: " + str(bankroll))
+        #print()
         return {"bankroll" : bankroll, "hands_won" : hands_won, "hands_lost" : hands_lost, "hands_pushed" : hands_pushed, "hands_surrendered" : hands_surrendered, "hands_played" : hands_played}
     elif player_blackjack_boolean and not dealer_blackjack_boolean:
         #print("Player has blackjack but Dealer does not (Player wins $" + str(1.5 * bet) + ")")
         bankroll += (1.5 * bet)
         hands_won += 1
+        #print("bankroll: " + str(bankroll))
         #print()
         return {"bankroll" : bankroll, "hands_won" : hands_won, "hands_lost" : hands_lost, "hands_pushed" : hands_pushed, "hands_surrendered" : hands_surrendered, "hands_played" : hands_played}
     elif dealer_bust and double_boolean:
         #print("Player doubled and Dealer busted (Player wins $" + str(2 * bet) + ")")
         bankroll += (2 * bet)
         hands_won += 1
+        #print("bankroll: " + str(bankroll))
         #print()
         return {"bankroll" : bankroll, "hands_won" : hands_won, "hands_lost" : hands_lost, "hands_pushed" : hands_pushed, "hands_surrendered" : hands_surrendered, "hands_played" : hands_played}
     elif (ace_converter(players_hand)["hand_total"] > ace_converter(dealers_hand)["hand_total"]) and not dealer_bust and double_boolean:
         #print("Player doubled and has greater hand than Dealer (Player wins $" + str(2 * bet) + ")")
         bankroll += (2 * bet)
         hands_won += 1
+        #print("bankroll: " + str(bankroll))
         #print()
         return {"bankroll" : bankroll, "hands_won" : hands_won, "hands_lost" : hands_lost, "hands_pushed" : hands_pushed, "hands_surrendered" : hands_surrendered, "hands_played" : hands_played}
     elif (ace_converter(players_hand)["hand_total"] > ace_converter(dealers_hand)["hand_total"]):
         #print("Player has a greater hand than Dealer (Player wins $" + str(bet) + ")")
         bankroll += bet
         hands_won += 1
+        #print("bankroll: " + str(bankroll))
         #print()
         return {"bankroll" : bankroll, "hands_won" : hands_won, "hands_lost" : hands_lost, "hands_pushed" : hands_pushed, "hands_surrendered" : hands_surrendered, "hands_played" : hands_played}
     elif (ace_converter(players_hand)["hand_total"] < ace_converter(dealers_hand)["hand_total"]) and not dealer_bust and double_boolean:
         #print("Dealer has not busted and has a greater hand than Player who doubled (Player loses $" + str(2 * bet) + ")")
         bankroll -= (2 * bet)
         hands_lost += 1
+        #print("bankroll: " + str(bankroll))
         #print()
         return {"bankroll" : bankroll, "hands_won" : hands_won, "hands_lost" : hands_lost, "hands_pushed" : hands_pushed, "hands_surrendered" : hands_surrendered, "hands_played" : hands_played}
     elif (ace_converter(players_hand)["hand_total"] < ace_converter(dealers_hand)["hand_total"]) and not dealer_bust:
         #print("Dealer has greater hand than Player and has not busted (Player loses $" + str(bet) + ")")
         bankroll -= bet
         hands_lost += 1
+        #print("bankroll: " + str(bankroll))
         #print()
         return {"bankroll" : bankroll, "hands_won" : hands_won, "hands_lost" : hands_lost, "hands_pushed" : hands_pushed, "hands_surrendered" : hands_surrendered, "hands_played" : hands_played}
     elif (ace_converter(players_hand)["hand_total"] == ace_converter(dealers_hand)["hand_total"]):
         #print("Push")
+        #print("bankroll: " + str(bankroll))
         #print()
         hands_pushed += 1
         return {"bankroll" : bankroll, "hands_won" : hands_won, "hands_lost" : hands_lost, "hands_pushed" : hands_pushed, "hands_surrendered" : hands_surrendered, "hands_played" : hands_played}
@@ -693,6 +728,7 @@ def play_decision(players_hand, dealers_hand, player_blackjack_boolean, dealer_b
         #print("Dealer busted and Player has not busted (Player wins $" + str(bet) + ")")
         bankroll += bet
         hands_won += 1
+        #print("bankroll: " + str(bankroll))
         #print()
         return {"bankroll" : bankroll, "hands_won" : hands_won, "hands_lost" : hands_lost, "hands_pushed" : hands_pushed, "hands_surrendered" : hands_surrendered, "hands_played" : hands_played}
     return {"bankroll" : bankroll, "hands_won" : hands_won, "hands_lost" : hands_lost, "hands_pushed" : hands_pushed, "hands_surrendered" : hands_surrendered, "hands_played" : hands_played}
@@ -715,43 +751,42 @@ bet_spread = {  -45 : 10, -44 : 10, -43 : 10, -42 : 10, -41 : 10 ,
                 -15 : 10, -14 : 10, -13 : 10, -12 : 10, -11 : 10 ,
                 -10 : 10,  -9 : 10,   -8 : 10,  -7 : 10, -6 : 10 ,
                 -5 : 10,   -4 : 10,   -3 : 10,  -2 : 10, -1 : 10,
-                0 : 10,   1 : 10,   2 : 25 ,
-                3 : 50,  4 : 100,  5 : 100 ,
-                6 : 100,  7 : 100,  8 : 100 ,
-                9 : 100,  10 : 100, 11 : 100 ,
-                12 : 100, 13 : 100, 14 : 100 ,
-                15 : 100, 16 : 100, 17 : 100 ,
-                18 : 100, 19 : 100, 20 : 100 ,
-                21 : 100, 22 : 100, 23 : 100 ,
-                24 : 100, 25 : 100, 26 : 100 ,
-                27 : 100, 28 : 100, 29 : 100 ,
-                30 : 100, 31 : 100, 32 : 100 ,
-                33 : 100, 34 : 100, 35 : 100 ,
-                36 : 100, 37 : 100, 38 : 100 ,
-                39 : 100, 40 : 100, 41 : 100
+                0 : 10,   1 : 50,   2 : 80 ,
+                3 : 120,   4 : 120,  5 : 120 ,
+                6 : 120,   7 : 120,  8 : 120 ,
+                9 : 120,  10 : 120, 11 : 120 ,
+                12 : 120, 13 : 120, 14 : 120 ,
+                15 : 120, 16 : 120, 17 : 120 ,
+                18 : 120, 19 : 120, 20 : 120 ,
+                21 : 120, 22 : 120, 23 : 120 ,
+                24 : 120, 25 : 120, 26 : 120 ,
+                27 : 120, 28 : 120, 29 : 120 ,
+                30 : 120, 31 : 120, 32 : 120 ,
+                33 : 120, 34 : 120, 35 : 120 ,
+                36 : 120, 37 : 120, 38 : 120 ,
+                39 : 120, 40 : 120, 41 : 120
             }
 bankroll_list = []
 sims_list = []
-sims_amt = 10
+#split_hands_played = 0
+hands_played = 0
+hands_won = 0
+hands_lost = 0
+hands_pushed = 0
+hands_surrendered = 0
+sims_amt = 2
 for sims in range(0, sims_amt):
-    deck_count = 2
-    penetration = 70 # as a percentage, adjust here
+    deck_count = 6
+    penetration = 85 # as a percentage, adjust here
     count = 0
     true_count = 0
     cards = ["A", 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10] # need to do penetration
     shoe = cards * 4 * deck_count
     random.shuffle(shoe)
-    rounds = 250000
-    rounds_per_hour = 70
-    hands_played = 0
-    hands_won = 0
-    hands_lost = 0
-    hands_pushed = 0
-    hands_surrendered = 0
-    split_hands_played = 0
-    starting_bankroll = 10000
+    rounds = 2500000
+    hands_per_hour = 70
+    starting_bankroll = 15000
     bankroll = starting_bankroll
-    counter = 0
     print("sims done: " + str(sims))
     for i in range(0, rounds):
         if (len(cards * 4 * deck_count) - len(shoe)) >= ((penetration / 100) * len(cards * 4 * deck_count)): # penetration
@@ -772,7 +807,7 @@ for sims in range(0, sims_amt):
             split_dict = split(player_dict["players_hand"], player_dict["dealers_hand"], dealer_dict["shoe"], count)
             #print("len(shoe): " + str(len(shoe)))
             for j in range(0, len(split_dict)):
-                bankroll_dict = play_decision(split_dict[j]["players_hand"], dealer_dict["dealers_hand"], player_dict["player_blackjack_boolean"], player_dict["dealer_blackjack_boolean"], dealer_dict["dealer_bust"], bet_spread, bankroll, split_dict[j]["double_boolean"], split_dict[j]["player_bust"], player_dict["late_surrender_boolean"], true_count, count, hands_won, hands_lost, hands_pushed, hands_surrendered, hands_played)
+                bankroll_dict = play_decision(split_dict[j]["players_hand"], dealer_dict["dealers_hand"], player_dict["player_blackjack_boolean"], player_dict["dealer_blackjack_boolean"], dealer_dict["dealer_bust"], bet_spread, bankroll, split_dict[j]["double_boolean"], split_dict[j]["player_bust"], player_dict["late_surrender_boolean"], true_count, count, hands_won, hands_lost, hands_pushed, hands_surrendered, hands_played, split_dict[j]["ace_split_boolean"])
                 bankroll = bankroll_dict["bankroll"]
                 bankroll_list.append(bankroll)
                 hands_won = bankroll_dict["hands_won"]
@@ -780,7 +815,6 @@ for sims in range(0, sims_amt):
                 hands_pushed = bankroll_dict["hands_pushed"]
                 hands_surrendered = bankroll_dict["hands_surrendered"]
                 hands_played = bankroll_dict["hands_played"]
-                split_hands_played += 1
                 #update_line(hl, bankroll_list)
             for j in range(0, len(split_dict)):
                 #print(split_dict[j]["players_hand"])
@@ -792,7 +826,7 @@ for sims in range(0, sims_amt):
                 #print("split_dict decks_remaining: " + str(split_dict[j]["decks_remaining"]))
                 #print("split_dict true_count: " + str(split_dict[j]["true_count"]))
             continue # this fixes the problem where the pair doesn't get get forgotten
-        bankroll_dict = play_decision(player_dict["players_hand"], dealer_dict["dealers_hand"], player_dict["player_blackjack_boolean"], player_dict["dealer_blackjack_boolean"], dealer_dict["dealer_bust"], bet_spread, bankroll, player_dict["double_boolean"], player_dict["player_bust"], player_dict["late_surrender_boolean"], true_count, count, hands_won, hands_lost, hands_pushed, hands_surrendered, hands_played)
+        bankroll_dict = play_decision(player_dict["players_hand"], dealer_dict["dealers_hand"], player_dict["player_blackjack_boolean"], player_dict["dealer_blackjack_boolean"], dealer_dict["dealer_bust"], bet_spread, bankroll, player_dict["double_boolean"], player_dict["player_bust"], player_dict["late_surrender_boolean"], true_count, count, hands_won, hands_lost, hands_pushed, hands_surrendered, hands_played, False)
         bankroll = bankroll_dict["bankroll"]
         bankroll_list.append(bankroll)
         #update_line(hl, bankroll_list)
@@ -805,11 +839,16 @@ for sims in range(0, sims_amt):
         count += count_update(dealer_dict["dealers_hand"])
         decks_remaining = deck_count * (len(shoe) / (deck_count * 52))
         true_count = count / decks_remaining
-        if bankroll < 0: # you went broke
-            sims_list.append(bankroll)
+        if bankroll <= 0: # you went broke
+            sims_list.append((-1 * starting_bankroll) + bankroll)
             break
-        if i == (rounds - 1):
-            sims_list.append(bankroll - starting_bankroll)
+        #print("i: " + str(i))
+        if i == (rounds - 1): # end of loop
+            #print("Hello")
+            if bankroll > starting_bankroll:
+                sims_list.append(bankroll - starting_bankroll) # profit
+            else:
+                sims_list.append(-1 * (starting_bankroll - bankroll)) # losses
         #print()
         #print("running count in SIM: " + str(count))
         #print("player_dict running_count: " + str(player_dict["count"]))
@@ -817,33 +856,31 @@ for sims in range(0, sims_amt):
         #print("player_dict true_count: " + str(player_dict["true_count"]))
         #print("bankroll: " + str(bankroll))
 
-
-money_made = (bankroll - starting_bankroll)
-print("money_made: $" + str(money_made) + " in " + str(rounds / rounds_per_hour) + "hrs")
-ev = money_made / (rounds / rounds_per_hour)
-print("ev ($/hr): $" + str(ev))
 #print("hands_won: " + str(hands_won))
 #print("hands_lost: " + str(hands_lost))
 #print("hands_pushed: " + str(hands_pushed))
 #print("hands_surrendered: " + str(hands_surrendered))
-print("You win %" + str(hands_won / rounds) + " of the time.")
-print("You lose %" + str(hands_lost / rounds) + " of the time.")
-print("You pushed %" + str(hands_pushed / rounds) + " of the time.")
-print("You surrendered %" + str(hands_surrendered / rounds) + " of the time.")
-#print("split_hands_played: " + str(split_hands_played))
+print("You win %" + str(hands_won / hands_played) + " of the time.")
+print("You lose %" + str(hands_lost / hands_played) + " of the time.")
+print("You pushed %" + str(hands_pushed / hands_played) + " of the time.")
+print("You surrendered %" + str(hands_surrendered / hands_played) + " of the time.")
+print("Total percent of hands_won, hands_lost, hands_pushed, and hands_surrendered: %" + str((hands_won + hands_lost + hands_pushed + hands_surrendered) / hands_played))
 print("Total hands played by addition of parts: " + str(hands_won + hands_lost + hands_pushed + hands_surrendered))
 print("Total hands played from play_decision counter: " + str(hands_played))
 print(sims_list)
 
-i = 0
+broke_counter = 0
 for values in sims_list:
-    if values <= 0:
-        i += 1
-print("You went broke " + str(i) + " times.")
-print("Your risk of ruin based on " + str(sims_amt) + " sims is " + str(i / len(sims_list)))
-print("Average of all bankrolls: $" + str(sum(sims_list) / len(sims_list)))
-print("ev ($/hr): $" + str((sum(sims_list) / len(sims_list)) / (rounds / rounds_per_hour)))
-print("i: " + str(i))
+    if values <= (-1 * starting_bankroll):
+        broke_counter += 1
+average_of_all_bankrolls = sum(sims_list) / sims_amt
+average_hours_played_per_sim = (hands_played / hands_per_hour) / sims_amt
+print("You went broke " + str(broke_counter) + " times.")
+print("Your risk of ruin based on " + str(sims_amt) + " sims is %" + str(100 * (broke_counter / sims_amt)))
+print("ev ($/hr): $" + str(average_of_all_bankrolls / average_hours_played_per_sim))
+print("Average of all bankrolls: $" + str(average_of_all_bankrolls))
+print("hands_played (" + str(hands_played) + ") / hands_per_hour (" + str(hands_per_hour) + "): " + str(hands_played / hands_per_hour))
+#print("split_hands_played: " + str(split_hands_played))
 
 end_time = time.time()
 print("time: " + str(round(end_time - start_time, 5)) + "s")
