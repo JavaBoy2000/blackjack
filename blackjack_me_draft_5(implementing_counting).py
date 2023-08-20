@@ -31,10 +31,8 @@ def count_update(curr_hand):
     for card in curr_hand:
         if card in [2, 3, 4, 5, 6]:
             curr_hand_count += 1
-    for card in curr_hand:
         if card in [7, 8, 9]:
             curr_hand_count += 0
-    for card in curr_hand:
         if card in [10, "A"]:
             curr_hand_count -= 1
     return curr_hand_count
@@ -209,6 +207,7 @@ def soft_hand_check(pre_converted_players_hand):
 # "D" : Double if allowed, otherwise hit
 # "Ds" : Double if allowed, otherwise stand
 # "SUR" : Surrender
+# "INS" : Insurance
 
 DAS_boolean = True # make this into input later
 def basic_strategy(players_hand, dealers_hand, true_count, count): # implement to turn off LS here
@@ -657,7 +656,7 @@ def split(players_hand, dealers_hand, shoe, count, dict_count_frequency):
     #print("decks_remaining at start of split: " + str(decks_remaining))
     #print("cards_remaining at start of split: " + str(cards_remaining))
     #print("true_count calculated at start of split: " + str(true_count))
-    if players_hand == ["A", "A"]: # no RSA
+    if players_hand == ["A", "A"]: # no RSA, program later
         #count += count_update(players_hand) # this gets updated in play_player, nice
         split_players_hand = [[players_hand[0]], [players_hand[1]]]
         #print("in the split function for aces")
@@ -757,7 +756,7 @@ def split(players_hand, dealers_hand, shoe, count, dict_count_frequency):
     #print("num_splits: " + str(num_splits))
     i = 0
     for players_hand in split_players_hand: # third split, no more splits
-        # I think this third split splicing for the lists is wrong
+        # I think this third split splicing for the lists is wrong, nah it's good
         if basic_strategy(split_players_hand[i], dealers_hand, true_count, count) == "Y":
             num_splits += 1
             #print("You are in the third split")
@@ -1033,16 +1032,19 @@ for keys in range(-100, 100):
     dict_count_frequency[keys] = 0
 
 bet_spread = {}
-min_bet = 25
-max_bet = 300
+min_bet = 15
+max_bet = 1500
 for keys in range(-100, 1):
     bet_spread[keys] = min_bet
-for keys in range(2, 101):
+for keys in range(8, 101):
     bet_spread[keys] = max_bet
 bet_spread[1] = 75
-#bet_spread[2] = 100
-#bet_spread[3] = 125
-
+bet_spread[2] = 270
+bet_spread[3] = 465
+bet_spread[4] = 675
+bet_spread[5] = 870
+bet_spread[6] = 1095
+bet_spread[7] = 1305
 
 
 dict_win_loss_frequency = {}
@@ -1059,19 +1061,19 @@ hands_lost = 0
 hands_pushed = 0
 hands_surrendered = 0
 hands_wonged_out = 0
-sims_amt = 100
+sims_amt = 1
 for sims in range(0, sims_amt):
     deck_count = 6
-    penetration = 60 # as a percentage, adjust here
+    penetration = 91.666666667 # as a percentage, adjust here
     count = 0
     true_count = 0
     cards = ["A", 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10] # need to do penetration
     cards_played = 0
     shoe = cards * 4 * deck_count
     random.shuffle(shoe)
-    rounds = 300000
-    hands_per_hour = 210
-    starting_bankroll = 15000
+    rounds = 5000000
+    hands_per_hour = 70
+    starting_bankroll = 50000
     bankroll = starting_bankroll
     print("sims done: " + str(sims))
     for i in range(0, rounds):
@@ -1095,7 +1097,7 @@ for sims in range(0, sims_amt):
             #bet = bet_spread[math.floor(true_count)]
             #print("true_count floored: " + str(math.floor(true_count)))
         bet = bet_spread[true_count]
-        if true_count < -80:
+        if true_count < -80: # wonging out function
             bet = 0
             hands_wonged_out += 1
         dict_count_frequency_1[true_count] += 1
@@ -1225,7 +1227,6 @@ print("rounds by dict_count_frequency_1: " + str(total_cards_dealt))
 for key in dict_count_frequency_1:
     print(str(key) + " : " + str(round(dict_count_frequency_1[key] / total_cards_dealt, 4) * 100) + "%")
 
-'''
 print("hands_wonged_out: " + str(hands_wonged_out))
 print("total_hands_played: " + str(hands_played))
 print("You played %" + str(100 - (round(hands_wonged_out / hands_played, 3) * 100)) + " of hands")
@@ -1234,10 +1235,14 @@ for key in dict_win_loss_frequency:
     print(str(key) + " " + str(dict_win_loss_frequency[key]))
 for key in dict_win_loss_frequency:
     print("hands_won at a true " + str(key) + ": %" + str(round(dict_win_loss_frequency[key]["hands_won"] / (dict_win_loss_frequency[key]["hands_won"] + dict_win_loss_frequency[key]["hands_lost"] + dict_win_loss_frequency[key]["hands_pushed"] + 0.000001), 4) * 100))
+    print("hands_lost at a true " + str(key) + ": %" + str(round(dict_win_loss_frequency[key]["hands_lost"] / (dict_win_loss_frequency[key]["hands_won"] + dict_win_loss_frequency[key]["hands_lost"] + dict_win_loss_frequency[key]["hands_pushed"] + 0.000001), 4) * 100))
+    print("hands_pushed at a true " + str(key) + ": %" + str(round(dict_win_loss_frequency[key]["hands_pushed"] / (dict_win_loss_frequency[key]["hands_won"] + dict_win_loss_frequency[key]["hands_lost"] + dict_win_loss_frequency[key]["hands_pushed"] + 0.000001), 4) * 100))
     # + 0.000001 is there to take care of the divide by 0 error
 for key in dict_win_loss_frequency:
-    print("edge at a true " + str(key) + ": %" + str((100 * round(dict_win_loss_frequency[key]["hands_won"] / (dict_win_loss_frequency[key]["hands_won"] + dict_win_loss_frequency[key]["hands_lost"] + 0.000001), 4)) - 50))
-'''
+    print("edge at a true " + str(key) + ": %" + str(round(dict_win_loss_frequency[key]["hands_won"] / (dict_win_loss_frequency[key]["hands_won"] + dict_win_loss_frequency[key]["hands_lost"] + dict_win_loss_frequency[key]["hands_pushed"] + 0.000001), 4) * 100 - round((hands_won / hands_played) * 100, 3)))
+    #print("You won %" + str(round((hands_won / hands_played) * 100, 3)) + " of the time.")
+    #print("edge at a true " + str(key) + ": %" + str((100 * round(dict_win_loss_frequency[key]["hands_won"] / (dict_win_loss_frequency[key]["hands_won"] + dict_win_loss_frequency[key]["hands_lost"] + 0.000001), 4)) - 50))
+
 
 end_time = time.time()
 print("time: " + str(round(end_time - start_time, 5)) + "s")
